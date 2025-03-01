@@ -1,0 +1,47 @@
+# Binaries and executables
+*.exe
+*.out
+*.o
+*.so
+*.a
+
+# Go build artifacts
+/bin/
+/pkg/
+/vendor/
+*.test
+*.log
+
+# Dependency management
+go.sum
+go.work
+go.work.sum
+
+# IDE and editor settings
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Environment and configuration files
+.env
+.env.local
+config.yaml
+
+# Temporary and cache files
+/tmp/
+*.cache
+*.bak
+
+# Docker-related
+docker-compose.override.yml
+.dockerignore
+
+# Node.js (if frontend exists)
+node_modules/
+npm-debug.log
+yarn.lock

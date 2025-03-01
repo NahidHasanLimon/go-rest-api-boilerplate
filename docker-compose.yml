@@ -1,0 +1,12 @@
+version: "3.8"
+services:
+  go-rest-api-service-dev:
+    build: .
+    container_name: go-rest-api-container
+    volumes:
+      - .:/app
+    ports:
+      - "8090:8070"
+    tty: true
+    stdin_open: true
+    command: air  # Run Air for hot-reloading
