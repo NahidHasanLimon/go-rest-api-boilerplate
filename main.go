@@ -1,117 +1,145 @@
 package main
 
 import (
-	"fmt"	
+	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
+
 	"github.com/gorilla/mux"
-	 "encoding/json"
 )
 
-
-var drivers [] Driver
+var drivers []Driver
 
 type Driver struct {
-	ID int  `json:"id"`
-	Name string  `json:"name"`
-	Phone  string`json:"phone"`
+	ID    int    `json:"id"`
+	Name  string `json:"name"`
+	Phone string `json:"phone"`
 }
 
 func getLastDriverID() int {
 	if len(drivers) == 0 {
-		return 0 
+		return 0
 	}
 	return drivers[len(drivers)-1].ID
 }
 
-
-func getDrivers(w http.ResponseWriter , r *http.Request){
+func getDrivers(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "get drivers!")
 	json.NewEncoder(w).Encode(drivers)
 
 }
-func getDriver(w http.ResponseWriter , r *http.Request){
-	   params := mux.Vars(r)
-	   var foundDriver *Driver
+func getDriver(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	var foundDriver *Driver
 
-	   id, err := strconv.Atoi(params["id"])
-		
-	   if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
+	id, err := strconv.Atoi(params["id"])
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	for i := range drivers {
+		if drivers[i].ID == id {
+			foundDriver = &drivers[i] // ✅ Points to the actual slice element
+			break
 		}
-		for i := range drivers {
-			if drivers[i].ID == id {
-				foundDriver = &drivers[i] // ✅ Points to the actual slice element
-				break
-			}
-		}
-	   if(foundDriver == nil){
-			http.Error(w, "Driver not found", http.StatusNotFound) // ✅ Fixed error message
-			return
-	   }
+	}
+	if foundDriver == nil {
+		http.Error(w, "Driver not found", http.StatusNotFound) // ✅ Fixed error message
+		return
+	}
 
-	   fmt.Printf("Fetched Driver: %+v\n", *foundDriver)
-
-	   json.NewEncoder(w).Encode(foundDriver)
+	json.NewEncoder(w).Encode(foundDriver)
 
 }
-func addDriver(w http.ResponseWriter , r *http.Request){
-	// params := mux.Vars(r)
-
-	var driver  Driver
+func addDriver(w http.ResponseWriter, r *http.Request) {
+	var driver Driver
 	err := json.NewDecoder(r.Body).Decode(&driver)
-	if(err != nil){
+	if err != nil {
 		http.Error(w, "Invalid payload", http.StatusBadRequest)
-				return
+		return
 	}
 
 	fmt.Println("pqrma s is", driver)
 
+	drivers = append(drivers, Driver{
+		ID:    getLastDriverID() + 1,
+		Name:  driver.Name,
+		Phone: driver.Phone,
+	})
+	fmt.Fprintf(w, "Driver added succesfully")
+}
 
-		drivers = append(drivers, Driver{
-			ID:    getLastDriverID()+ 1,
-			Name:  driver.Name,
-			Phone: driver.Phone,
-		})
-		fmt.Fprintf(w, "Driver added succesfully")
+func updateDriver(w http.ResponseWriter, r *http.Request) {
+
+	params := mux.Vars(r)
+	// var foundDriver *Driver
+
+	id, err := strconv.Atoi(params["id"])
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
-	func deleteDriver(w http.ResponseWriter, r *http.Request) {
-		params := mux.Vars(r)
+	var inputtedDriverInfo Driver
+	err = json.NewDecoder(r.Body).Decode(&inputtedDriverInfo)
+	if err != nil {
+	 http.Error(w, err.Error(), http.StatusBadRequest)
+	 return
+	}
 	
-		id, err := strconv.Atoi(params["id"])
-		if err != nil {
-			http.Error(w, "Invalid driver ID", http.StatusBadRequest)
-			return
+	fmt.Println("inputed ", inputtedDriverInfo)
+
+
+	for i, driver := range drivers {
+		if driver.ID == id {
+			drivers[i] =  inputtedDriverInfo;
+			json.NewEncoder(w).Encode(
+				map[string]string{
+					"message": "Driver updated successfully",
+				})
+			break
 		}
+	}
 	
-		newDrivers := []Driver{}
-	
-		for _, driver := range drivers {
-			if driver.ID != id {
-				newDrivers = append(newDrivers, driver)
-			}
+
+		http.Error(w, "Driver Not found", http.StatusNotFound)
+}
+
+func deleteDriver(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+
+	id, err := strconv.Atoi(params["id"])
+	if err != nil {
+		http.Error(w, "Invalid driver ID", http.StatusBadRequest)
+		return
+	}
+
+	newDrivers := []Driver{}
+
+	for _, driver := range drivers {
+		if driver.ID != id {
+			newDrivers = append(newDrivers, driver)
 		}
-		fmt.Println("lentght of drivers", len(drivers))
-	
-		if len(newDrivers) == len(drivers) {
-			http.Error(w, "Driver not found", http.StatusNotFound)
-			return
-		}
-		
-		drivers = newDrivers
-	
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(
-			map[string]string{
+	}
+
+	if len(newDrivers) == len(drivers) {
+		http.Error(w, "Driver not found", http.StatusNotFound)
+		return
+	}
+
+	drivers = newDrivers
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(
+		map[string]string{
 			"message": "Driver deleted successfully",
 		})
-	}
+}
 
-
-
-func main()  {
+func main() {
 	port := ":8070"
 	router := mux.NewRouter()
 	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -123,14 +151,12 @@ func main()  {
 		log.Println("Received request on /debug")
 		fmt.Fprintf(w, "Debug endpoint hit!")
 	})
-    
-	router.HandleFunc("/drivers",getDrivers).Methods("GET")
-	router.HandleFunc("/drivers/{id}",getDriver).Methods("GET")
 
-	router.HandleFunc("/drivers/{id}",deleteDriver).Methods("DELETE")
-	
-	router.HandleFunc("/drivers",addDriver).Methods("POST")
-	
+	router.HandleFunc("/drivers", getDrivers).Methods("GET")
+	router.HandleFunc("/drivers/{id}", getDriver).Methods("GET")
+	router.HandleFunc("/drivers/{id}", deleteDriver).Methods("DELETE")
+	router.HandleFunc("/drivers", addDriver).Methods("POST")
+	router.HandleFunc("/drivers/{id}", updateDriver).Methods("PUT")
 
 	err := http.ListenAndServe(port, router)
 
