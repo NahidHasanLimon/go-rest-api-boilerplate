@@ -6,17 +6,13 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-
 	"github.com/gorilla/mux"
+	"myproject/models"
 )
 
-var drivers []Driver
+var drivers []models.Driver
 
-type Driver struct {
-	ID    int    `json:"id"`
-	Name  string `json:"name"`
-	Phone string `json:"phone"`
-}
+
 
 func getLastDriverID() int {
 	if len(drivers) == 0 {
@@ -32,7 +28,7 @@ func getDrivers(w http.ResponseWriter, r *http.Request) {
 }
 func getDriver(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	var foundDriver *Driver
+	var foundDriver *models.Driver
 
 	id, err := strconv.Atoi(params["id"])
 
@@ -55,7 +51,7 @@ func getDriver(w http.ResponseWriter, r *http.Request) {
 
 }
 func addDriver(w http.ResponseWriter, r *http.Request) {
-	var driver Driver
+	var driver models.Driver
 	err := json.NewDecoder(r.Body).Decode(&driver)
 	if err != nil {
 		http.Error(w, "Invalid payload", http.StatusBadRequest)
@@ -64,7 +60,7 @@ func addDriver(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("pqrma s is", driver)
 
-	drivers = append(drivers, Driver{
+	drivers = append(drivers, models.Driver{
 		ID:    getLastDriverID() + 1,
 		Name:  driver.Name,
 		Phone: driver.Phone,
@@ -75,7 +71,6 @@ func addDriver(w http.ResponseWriter, r *http.Request) {
 func updateDriver(w http.ResponseWriter, r *http.Request) {
 
 	params := mux.Vars(r)
-	// var foundDriver *Driver
 
 	id, err := strconv.Atoi(params["id"])
 
@@ -83,7 +78,7 @@ func updateDriver(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	var inputtedDriverInfo Driver
+	var inputtedDriverInfo models.Driver
 	err = json.NewDecoder(r.Body).Decode(&inputtedDriverInfo)
 	if err != nil {
 	 http.Error(w, err.Error(), http.StatusBadRequest)
@@ -117,7 +112,7 @@ func deleteDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newDrivers := []Driver{}
+	newDrivers := []models.Driver{}
 
 	for _, driver := range drivers {
 		if driver.ID != id {
