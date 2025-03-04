@@ -1,68 +1,82 @@
 package handlers
+
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
+	"myproject/config"
+	"myproject/models"
 	"net/http"
 	"strconv"
+
 	"github.com/gorilla/mux"
-	"myproject/models"
 )
 
-
-var drivers []models.Driver
-
-func getLastDriverID() int {
-	if len(drivers) == 0 {
-		return 0
-	}
-	return drivers[len(drivers)-1].ID
-}
-
 func GetDrivers(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "get drivers!")
-	json.NewEncoder(w).Encode(drivers)
+	rows, err := config.DB.Query("SELECT * FROM drivers")
+	if err != nil {
+		http.Error(w, "Error fetching drivers", http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+	var drivers []models.Driver
 
+	for rows.Next() {
+		var driver models.Driver
+		if err := rows.Scan(&driver.ID, &driver.Name, &driver.Phone); err != nil {
+			http.Error(w, "Error scanning driver", http.StatusInternalServerError)
+			return
+		}
+		drivers = append(drivers, driver)
+	}
+	json.NewEncoder(w).Encode(drivers)
 }
+
 func GetDriver(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	var foundDriver *models.Driver
-
 	id, err := strconv.Atoi(params["id"])
-
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	for i := range drivers {
-		if drivers[i].ID == id {
-			foundDriver = &drivers[i] // ✅ Points to the actual slice element
-			break
+
+	var driver models.Driver
+	err = config.DB.QueryRow("SELECT id, name, phone FROM drivers where id=$1", id).
+		Scan(&driver.ID, &driver.Name, &driver.Phone)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "Database Error", http.StatusInternalServerError)
+		} else {
+			http.Error(w, "Driver not found", http.StatusNotFound)
 		}
-	}
-	if foundDriver == nil {
-		http.Error(w, "Driver not found", http.StatusNotFound) // ✅ Fixed error message
+
 		return
 	}
-
-	json.NewEncoder(w).Encode(foundDriver)
+	json.NewEncoder(w).Encode(driver)
 
 }
 func AddDriver(w http.ResponseWriter, r *http.Request) {
 	var driver models.Driver
+
 	err := json.NewDecoder(r.Body).Decode(&driver)
 	if err != nil {
 		http.Error(w, "Invalid payload", http.StatusBadRequest)
 		return
 	}
+	err = config.DB.QueryRow(
+		"INSERT INTO drivers (name, phone) VALUES ($1, $2) RETURNING id",
+		driver.Name, driver.Phone,
+	).Scan(&driver.ID)
 
-	fmt.Println("pqrma s is", driver)
-
-	drivers = append(drivers, models.Driver{
-		ID:    getLastDriverID() + 1,
-		Name:  driver.Name,
-		Phone: driver.Phone,
-	})
+	if err != nil {
+		http.Error(w, "Failed to create driver", http.StatusBadRequest)
+		return
+	}
+	fmt.Println("decoded driver is: ", driver)
 	fmt.Fprintf(w, "Driver added succesfully")
+
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(driver)
 }
 
 func UpdateDriver(w http.ResponseWriter, r *http.Request) {
@@ -75,56 +89,72 @@ func UpdateDriver(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	var inputtedDriverInfo models.Driver
-	err = json.NewDecoder(r.Body).Decode(&inputtedDriverInfo)
+	var driver models.Driver
+	err = json.NewDecoder(r.Body).Decode(&driver)
 	if err != nil {
-	 http.Error(w, err.Error(), http.StatusBadRequest)
-	 return
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
 	}
-	
-	fmt.Println("inputed ", inputtedDriverInfo)
 
-
-	for i, driver := range drivers {
-		if driver.ID == id {
-			drivers[i] =  inputtedDriverInfo;
-			json.NewEncoder(w).Encode(
-				map[string]string{
-					"message": "Driver updated successfully",
-				})
-			break
-		}
+	var sqlResultC sql.Result
+	sqlResultC, err = config.DB.Exec("UPDATE drivers SET name=$1, phone=$2 WHERE id=$3", driver.Name, driver.Phone, id)
+	if err != nil {
+		http.Error(w, "Error updating driver", http.StatusInternalServerError)
+		return
 	}
-	
 
-		http.Error(w, "Driver Not found", http.StatusNotFound)
+	var numberOfAffectedRows int64
+	numberOfAffectedRows, err = sqlResultC.RowsAffected()
+
+	if err != nil {
+		http.Error(w, "Failed to update", http.StatusInternalServerError)
+		return
+	}
+
+	if numberOfAffectedRows < 1 {
+		http.Error(w, "Driver not found", http.StatusNotFound)
+		return
+	}
+
+	json.NewEncoder(w).Encode(map[string]string{
+
+		"message": "driver updated successfully",
+	})
 }
 
 func DeleteDriver(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("delete call recieved ")
 	params := mux.Vars(r)
-
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
 		http.Error(w, "Invalid driver ID", http.StatusBadRequest)
 		return
 	}
 
-	newDrivers := []models.Driver{}
+	deleteSql := "DELETE FROM drivers where id=$1"
+	var sqlResultC sql.Result
 
-	for _, driver := range drivers {
-		if driver.ID != id {
-			newDrivers = append(newDrivers, driver)
-		}
+	sqlResultC, err = config.DB.Exec(deleteSql, id)
+
+	if err != nil {
+		fmt.Println("error is : ", err)
+		http.Error(w, "Failed to delete", http.StatusInternalServerError)
+		return
 	}
+	var rowsAffex int64
+	rowsAffex, err = sqlResultC.RowsAffected()
+	fmt.Println("wga is : ", rowsAffex)
 
-	if len(newDrivers) == len(drivers) {
-		http.Error(w, "Driver not found", http.StatusNotFound)
+	if err != nil {
+		http.Error(w, "Failed to delete", http.StatusInternalServerError)
 		return
 	}
 
-	drivers = newDrivers
+	if rowsAffex < 1 {
+		http.Error(w, "Nothing to delete with this id", http.StatusNotFound)
+		return
+	}
 
-	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(
 		map[string]string{
 			"message": "Driver deleted successfully",

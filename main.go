@@ -3,19 +3,21 @@ package main
 import (
 	"fmt"
 	"log"
-	"net/http"
-	"github.com/gorilla/mux"
+	"myproject/config"
 	"myproject/handlers"
+	"net/http"
+
+	"github.com/gorilla/mux"
+	_ "github.com/lib/pq"
 )
 
 
 func main() {
 	port := ":8070"
+	config.ConnectDB()
 	router := mux.NewRouter()
-	router.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Server is running on port %s", port)
-	})
-	// drivers = append(drivers, 100,200,3000,440404)
+	
+
 
 	router.HandleFunc("/debug", func(w http.ResponseWriter, r *http.Request) {
 		log.Println("Received request on /debug")
