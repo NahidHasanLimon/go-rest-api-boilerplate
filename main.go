@@ -15,9 +15,7 @@ func main() {
 	config.ConnectDB()
 	router := mux.NewRouter()
 
-	routes.Driverroutes(router)
-
-	
+	routes.RegisterRoutes(router)
 
 	err := http.ListenAndServe(port, router)
 
