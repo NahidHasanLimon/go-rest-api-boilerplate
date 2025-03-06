@@ -3,13 +3,13 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"myproject/config"
 	"myproject/models"
 	"myproject/utils"
 	"net/http"
 	"strconv"
 	"github.com/gorilla/mux"
+	"github.com/go-playground/validator/v10"
 )
 
 func GetDrivers(w http.ResponseWriter, r *http.Request) {
@@ -36,7 +36,7 @@ func GetDriver(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
-		utils.SendError(w, err.Error(), http.StatusBadRequest)
+		utils.SendError(w, "Failed to parse the driver id", http.StatusBadRequest)
 		return
 	}
 
@@ -63,6 +63,14 @@ func AddDriver(w http.ResponseWriter, r *http.Request) {
 		utils.SendError(w, "Invalid payload", http.StatusBadRequest)
 		return
 	}
+	validate := validator.New() // Initialize validator here
+	
+	err = validate.Struct(driver)
+	if err != nil {
+		utils.SendError(w, err, http.StatusBadRequest)
+		return
+	}
+
 	err = config.DB.QueryRow(
 		"INSERT INTO drivers (name, phone) VALUES ($1, $2) RETURNING id",
 		driver.Name, driver.Phone,
@@ -86,9 +94,18 @@ func UpdateDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var driver models.Driver
+
 	err = json.NewDecoder(r.Body).Decode(&driver)
 	if err != nil {
 		utils.SendError(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	validate := validator.New() 
+	
+	err = validate.Struct(driver)
+	if err != nil {
+		utils.SendError(w, err, http.StatusBadRequest)
 		return
 	}
 
@@ -99,15 +116,7 @@ func UpdateDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var numberOfAffectedRows int64
-	numberOfAffectedRows, err = sqlResultC.RowsAffected()
-
-	if err != nil {
-		utils.SendError(w, "Failed to update", http.StatusInternalServerError)
-		return
-	}
-
-	if numberOfAffectedRows < 1 {
+	if rowsAffected, _ := sqlResultC.RowsAffected(); rowsAffected == 0 {
 		utils.SendError(w, "Driver not found", http.StatusNotFound)
 		return
 	}
@@ -116,17 +125,14 @@ func UpdateDriver(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteDriver(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("delete call recieved ")
 	params := mux.Vars(r)
 	id, err := strconv.Atoi(params["id"])
 	if err != nil {
 		utils.SendError(w, "Invalid driver ID", http.StatusBadRequest)
 		return
 	}
-
-	deleteSql := "DELETE FROM drivers where id=$1"
 	var sqlResultC sql.Result
-	sqlResultC, err = config.DB.Exec(deleteSql, id)
+	sqlResultC, err = config.DB.Exec("DELETE FROM drivers where id=$1", id)
 	if err != nil {
 		utils.SendError(w, "Failed to delete", http.StatusInternalServerError)
 		return
