@@ -39,6 +39,11 @@ Ensure you have Go installed on your system.
 ## Contributions
 Feel free to contribute by submitting issues or pull requests!
 
-## License
-This project is licensed under the MIT License.
+
+### In-Memory CRUD Operations
+
+To check out the in-memory CRUD operations implemented in this project, please browse the following branch:
+This branch is only for understanding the concept of slices, defer, array, struct etc 
+
+[using-in-memory-array](https://github.com/NahidHasanLimon/go-rest-api-boilerplate/tree/using-in-memory-array)
 
