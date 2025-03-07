@@ -2,26 +2,28 @@ package main
 
 import (
 	"fmt"
-	"myproject/config"
-	"myproject/routes"
+	"go-rest-api/config"
+	"go-rest-api/routes"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 )
 
-func main() {
-	port := ":8070"
-
+func init() {
 	config.LoadConfig()
-
 	config.ConnectDB()
-
-	router := mux.NewRouter()
-	routes.RegisterRoutes(router)
+}
+func StartServer(router *mux.Router) {
+	port := ":" + config.AppConfig.ServerPort
 	err := http.ListenAndServe(port, router)
-
 	if err != nil {
 		fmt.Println("Error starting server:", err)
 	}
+}
+
+func main() {
+	router := mux.NewRouter()
+	routes.RegisterRoutes(router)
+	StartServer(router)
 }

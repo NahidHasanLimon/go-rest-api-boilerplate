@@ -3,13 +3,14 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
-	"myproject/config"
-	"myproject/models"
-	"myproject/utils"
+	"go-rest-api/config"
+	"go-rest-api/models"
+	"go-rest-api/utils"
 	"net/http"
 	"strconv"
-	"github.com/gorilla/mux"
+
 	"github.com/go-playground/validator/v10"
+	"github.com/gorilla/mux"
 )
 
 func GetDrivers(w http.ResponseWriter, r *http.Request) {
@@ -52,7 +53,7 @@ func GetDriver(w http.ResponseWriter, r *http.Request) {
 
 		return
 	}
-	utils.SendSuccess(w,"driver fetched successfully", driver)
+	utils.SendSuccess(w, "driver fetched successfully", driver)
 
 }
 func AddDriver(w http.ResponseWriter, r *http.Request) {
@@ -64,7 +65,7 @@ func AddDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	validate := validator.New() // Initialize validator here
-	
+
 	err = validate.Struct(driver)
 	if err != nil {
 		utils.SendError(w, err, http.StatusBadRequest)
@@ -77,7 +78,7 @@ func AddDriver(w http.ResponseWriter, r *http.Request) {
 	).Scan(&driver.ID)
 
 	if err != nil {
-		utils.SendError(w, "Failed to create driver", http.StatusBadRequest)	
+		utils.SendError(w, "Failed to create driver", http.StatusBadRequest)
 		return
 	}
 	utils.SendSuccess(w, "Driver created successfully", driver)
@@ -101,8 +102,8 @@ func UpdateDriver(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	validate := validator.New() 
-	
+	validate := validator.New()
+
 	err = validate.Struct(driver)
 	if err != nil {
 		utils.SendError(w, err, http.StatusBadRequest)
@@ -120,7 +121,7 @@ func UpdateDriver(w http.ResponseWriter, r *http.Request) {
 		utils.SendError(w, "Driver not found", http.StatusNotFound)
 		return
 	}
-	utils.SendSuccess(w,"driver updated successfully",nil)
+	utils.SendSuccess(w, "driver updated successfully", nil)
 
 }
 
@@ -148,5 +149,5 @@ func DeleteDriver(w http.ResponseWriter, r *http.Request) {
 		utils.SendError(w, "Nothing to delete with this id", http.StatusNotFound)
 		return
 	}
-	utils.SendSuccess(w,"Driver deleted successfully",nil)
+	utils.SendSuccess(w, "Driver deleted successfully", nil)
 }

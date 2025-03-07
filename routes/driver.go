@@ -1,10 +1,12 @@
 package routes
-import(
-	"github.com/gorilla/mux"
-	"myproject/handlers"
 
+import (
+	"go-rest-api/handlers"
+
+	"github.com/gorilla/mux"
 )
-func Driverroutes(router *mux.Router){
+
+func Driverroutes(router *mux.Router) {
 	router.HandleFunc("/drivers", handlers.GetDrivers).Methods("GET")
 	router.HandleFunc("/drivers/{id}", handlers.GetDriver).Methods("GET")
 	router.HandleFunc("/drivers/{id}", handlers.DeleteDriver).Methods("DELETE")
