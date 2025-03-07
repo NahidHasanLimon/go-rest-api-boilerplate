@@ -21,6 +21,10 @@ This repository is a REST API project built using Go. It was initially created a
 ### Prerequisites
 Ensure you have Go installed on your system.
 
+## Used Technology,Libraray
+ - Postgress
+ - Gorilla mux
+
 ### Installation
 1. Clone the repository:
    ```sh
@@ -40,10 +44,9 @@ Ensure you have Go installed on your system.
 Feel free to contribute by submitting issues or pull requests!
 
 
-### In-Memory CRUD Operations
 
-To check out the in-memory CRUD operations implemented in this project, please browse the following branch:
-This branch is only for understanding the concept of slices, defer, array, struct etc 
+##### In-Memory CRUD Operations ( Initial )
 
-[using-in-memory-array](https://github.com/NahidHasanLimon/go-rest-api-boilerplate/tree/using-in-memory-array)
+- To check out the in-memory CRUD operations implemented in this project, please browse the following branch:
+This branch is only for understanding the concept of slices, defer, array, struct etc [using-in-memory-array](https://github.com/NahidHasanLimon/go-rest-api-boilerplate/tree/using-in-memory-array)
 
