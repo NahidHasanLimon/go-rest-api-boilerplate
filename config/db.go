@@ -10,7 +10,6 @@ var DB *sql.DB
 
 func ConnectDB() {
 	var err error
-	// connStr := "host=localhost port=5432 user=postgres password=1234 dbname=my_new_database sslmode=disable"
 	connStr := fmt.Sprintf(
 		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
 		AppConfig.DBHost,
