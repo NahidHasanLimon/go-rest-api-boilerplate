@@ -3,39 +3,40 @@ package main
 import (
 	// "fmt"
 	"go-rest-api/config"
+	"go-rest-api/logger"
 	"go-rest-api/routes"
+	"go-rest-api/middleware"
 	"net/http"
-
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
-	"go.uber.org/zap"
+	
 )
-var logger *zap.Logger
+
+
+
 
 
 func init() {
-	
+	// config.init()
 	config.LoadConfig()
 	config.ConnectDB()
-	var err error
-	logger, _ = zap.NewProduction()
-	if err != nil {
-		panic("Failed to initialize logger")
-	}
+	
 }
 func StartServer(router *mux.Router) {
 	
 	port := ":" + config.AppConfig.ServerPort
-	logger.Info("Server stareting on port "+port)
+	logger.Log().Info("Server starting on port "+port)
+
 	err := http.ListenAndServe(port, router)
 	if err != nil {
-		logger.Fatal("Failed to start server", zap.Error(err))
+		logger.Log().Fatal("Failed to start server",err)
 	}
-	logger.Info("Server stareted on port "+port)
+	config.Log().Info("Server stareted on port "+port)
 }
 
 func main() {
 	router := mux.NewRouter()
+	router.Use(middleware.LoggerMiddleware)
 	routes.RegisterRoutes(router)
 	StartServer(router)
 }
