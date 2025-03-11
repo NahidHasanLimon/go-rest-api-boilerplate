@@ -8,12 +8,16 @@ import (
 	"go-rest-api/utils"
 	"net/http"
 	"strconv"
+	"go-rest-api/logger"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gorilla/mux"
 )
 
 func GetDrivers(w http.ResponseWriter, r *http.Request) {
+	log := logger.WithContext(r.Context()) // Auto-attaches request ID
+	log.Info("GetUsers endpoint hit")
+	
 	rows, err := config.DB.Query("SELECT * FROM drivers")
 	if err != nil {
 		utils.SendError(w, "Error fetching drivers", http.StatusInternalServerError)

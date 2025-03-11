@@ -31,7 +31,7 @@ func StartServer(router *mux.Router) {
 	if err != nil {
 		logger.Log().Fatal("Failed to start server",err)
 	}
-	config.Log().Info("Server stareted on port "+port)
+	logger.Log().Info("Server stareted on port "+port)
 }
 
 func main() {
