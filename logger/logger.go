@@ -14,8 +14,6 @@ func init(){
 	// logrus.SetFormatter(&logrus.JSONFormatter{})
 	logrus.SetOutput(os.Stdout) 
 	logger = logrus.New()
-
-	// Custom JSON Formatter
 	logger.SetFormatter(&logrus.JSONFormatter{
 		TimestampFormat: time.RFC3339, // ISO 8601 format
 		FieldMap: logrus.FieldMap{
